@@ -7,7 +7,7 @@ on:
   pull_request:
 env:
   CI: true
-  PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD: '1'
+  PLAYWRIGHT_BROWSERS_PATH: 0
 
 jobs:
   Lint:
@@ -46,21 +46,10 @@ jobs:
         with:
           node-version: ${{ matrix.node-version }}
           cache: pnpm
-      - name: Get paths for OS
-        uses: ./.github/actions/env
-        id: paths
-      - name: Cache browsers
-        id: browser_cache
-        uses: actions/cache@main
-        with:
-          path: ${{ steps.paths.outputs.browser_cache_path }}
-          key: chromium-${{ runner.os }}-${{ hashFiles('**/pnpm-lock.yaml') }}
       - run: pnpm install --frozen-lockfile
-        env:
-          PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD: ${{ steps.browser_cache.outputs.cache-hit == 'true' }}
       - run: pnpm build --filter ./packages --filter !./packages/create-svelte/templates
       - run: pnpm test
-      - name: archive test results
+      - name: Archive test results
         if: failure()
         shell: bash
         run: find packages -type d -name test-results -not -empty | tar -czf test-results.tar.gz --exclude='*-retry*' --files-from=-
